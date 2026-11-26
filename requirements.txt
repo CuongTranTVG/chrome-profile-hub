@@ -1,0 +1,4 @@
+psutil>=5.9
+websocket-client>=1.6
+pillow>=10        # icon + screenshots
+playwright>=1.40  # only needed by AI agents that attach to a profile

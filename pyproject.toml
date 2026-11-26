@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chrome-profile-hub"
+version = "0.1.0"
+description = "One table for all your logged-in Chrome profiles, shared by humans and AI agents (Playwright / CDP)."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = ["psutil>=5.9", "websocket-client>=1.6"]
+keywords = ["chrome", "profiles", "playwright", "cdp", "ai-agent", "claude", "mcp", "browser-automation", "google-login", "multi-account"]
+
+[project.optional-dependencies]
+agent = ["playwright>=1.40"]
+screenshots = ["pillow>=10"]
+
+[project.urls]
+Homepage = "https://github.com/CuongTranTVG/chrome-profile-hub"
+
+[project.scripts]
+chrome-profile-hub = "chrome_profile_hub.__main__:main"
+
+[tool.setuptools]
+packages = ["chrome_profile_hub"]

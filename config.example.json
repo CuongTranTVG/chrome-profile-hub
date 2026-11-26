@@ -1,0 +1,22 @@
+{
+  "_help": "Copy to %APPDATA%\\ChromeProfileHub\\config.json (install.ps1 does it). Keys starting with _ are ignored.",
+  "lang": "en",
+  "agent_label": "AI",
+  "chrome_path": null,
+  "data_dir": null,
+  "profiles_root": null,
+  "scan_roots": [],
+  "_scan_roots_example": ["%USERPROFILE%\\.playwright_profiles"],
+  "pinned": [],
+  "_pinned_example": [
+    {"key": "work", "dir": "%USERPROFILE%\\.playwright_profiles\\work_chrome", "port": 9334, "name": "Work", "email": "me@example.com"}
+  ],
+  "index_files": [],
+  "skip": ["Default"],
+  "port_range": [9400, 9999],
+  "owners": ["Me", "Team", "Client", "Shared", "?"],
+  "owner_rules": [["@example.com", "Team"], ["client", "Client"]],
+  "files": {},
+  "lease_minutes": 30,
+  "remote_allow_origins": null
+}
