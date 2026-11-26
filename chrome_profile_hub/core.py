@@ -78,7 +78,22 @@ def catalog():
                     add(d.name, d)
     if changed or not PORTS.exists():
         _save(PORTS, ports)
+    if CFG.get("everyday_chrome"):
+        rows += everyday_profiles()
     return rows
+
+
+def everyday_profiles():
+    """Profiles inside your normal Chrome folder. Chrome refuses remote debugging on its default folder
+    (Chrome 136+), so these rows are for HUMANS only: open them, see their logins. To give an AI agent a
+    login, create a dedicated profile with '+ New account' and log in there once."""
+    ud = Path(CFG.everyday_user_data)
+    info = _load(ud / "Local State", {}).get("profile", {}).get("info_cache", {})
+    out = []
+    for folder, v in sorted(info.items(), key=lambda kv: (kv[0] != "Default", len(kv[0]), kv[0])):
+        out.append({"key": "chrome:" + folder, "name": v.get("name") or folder, "email": v.get("user_name") or "",
+                    "dir": str(ud / folder), "port": None, "everyday": True, "profile_dir": folder})
+    return out
 
 
 def find(name):
@@ -147,9 +162,31 @@ def dir_in_use_without_port(d):
     return False
 
 
+def everyday_running():
+    """Is the normal Chrome (default folder) running?"""
+    try:
+        import psutil
+    except ImportError:
+        return False
+    ud = _norm(CFG.everyday_user_data)
+    for p in psutil.process_iter(["name", "cmdline"]):
+        try:
+            cl = p.info["cmdline"] or []
+            if "chrome" in (p.info["name"] or "").lower() and not any(a.startswith("--type=") for a in cl):
+                dirs = [a.split("=", 1)[1].strip('"') for a in cl if a.lower().startswith("--user-data-dir=")]
+                if not dirs or _norm(dirs[0]) == ud:
+                    return True
+        except Exception:
+            continue
+    return False
+
+
 def start(name, url=None):
     """Start real Chrome for this profile with its fixed port (no-op if already running)."""
     r = find(name)
+    if r.get("everyday"):
+        raise RuntimeError(f"'{r['name']}' is an everyday Chrome profile: Chrome does not allow agents to attach to it. "
+                           "Create a dedicated profile with '+ New account' and log in there once.")
     if port_open(r["port"]):
         return r
     if dir_in_use_without_port(r["dir"]):
@@ -176,6 +213,9 @@ def bring_window(r, url=None):
 
 def open_url(name, url=None):
     r = find(name)
+    if r.get("everyday"):   # normal Chrome window for a human
+        subprocess.Popen([CFG.chrome_path, f"--profile-directory={r['profile_dir']}"] + ([url] if url else []), close_fds=True)
+        return r
     if port_open(r["port"]):
         bring_window(r, url)
     else:
@@ -248,6 +288,8 @@ def agent_page(ctx, url=None):
 
 def close_profile(r):
     """Close Chrome gracefully over CDP (same as clicking X: session cookies are saved)."""
+    if r.get("everyday"):
+        raise RuntimeError("Everyday Chrome profiles are closed from Chrome itself.")
     import urllib.request
     import websocket
     info = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{r['port']}/json/version", timeout=3).read())

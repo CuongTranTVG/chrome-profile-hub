@@ -60,6 +60,8 @@ DEFAULTS = {
     "owner_rules": [],            # [["substring-in-email-or-name", "Owner"], ...]  first match wins
     "files": {},                  # override single files: ports, meta, status, leases, accounts, log
     "lease_minutes": 30,
+    "everyday_chrome": False,     # also list the profiles of your normal Chrome (human-only rows, see README)
+    "everyday_user_data": None,   # default: %LOCALAPPDATA%\\Google\\Chrome\\User Data
     "remote_allow_origins": None, # leave empty unless an old tool needs it (e.g. "*"); the port only listens on 127.0.0.1
 }
 
@@ -84,6 +86,9 @@ def load():
     c["profiles_root"] = Path(os.path.expandvars(os.path.expanduser(c["profiles_root"]))) if c["profiles_root"] else c["data_dir"] / "profiles"
     c["chrome_path"] = c["chrome_path"] or find_chrome()
     c["scan_roots"] = [Path(os.path.expandvars(os.path.expanduser(x))) for x in c["scan_roots"]]
+    if not c.get("everyday_user_data"):
+        c["everyday_user_data"] = str(Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Google" / "Chrome" / "User Data") if os.name == "nt" \
+            else str(Path.home() / ("Library/Application Support/Google/Chrome" if sys.platform == "darwin" else ".config/google-chrome"))
     c["config_file"] = p
     c["data_dir"].mkdir(parents=True, exist_ok=True)
     return c

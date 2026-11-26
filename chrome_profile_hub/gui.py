@@ -25,6 +25,7 @@ T = {
         "q_owner": "Owner of {name} ({owners}):", "q_note": "Note (what it is used for, whose phone has 2FA…):", "q_email": "Google email of this profile:",
         "q_new": "Google email (one email = one profile):", "new_done": "Created {key} - sign in to Google + 2FA in the new window.",
         "d_old": "Old name", "d_chrome": "Signed in to Chrome", "d_port": "Port", "d_dir": "Folder", "d_saved": "Saved logins",
+        "everyday": "Everyday Chrome (human only)", "everyday_stale": "Everyday Chrome · Chrome open, logins from last scan",
         "d_none": "  (no saved logins)", "d_exp": "expires", "err": "Error", "scan_err": "Scan error: {e}",
     },
     "vi": {
@@ -44,6 +45,7 @@ T = {
         "q_owner": "Chủ của {name} ({owners}):", "q_note": "Ghi chú (dùng cho việc gì, 2FA ở máy ai…):", "q_email": "Email Google của profile:",
         "q_new": "Email Google (mỗi email 1 profile riêng):", "new_done": "Đã tạo {key} – đăng nhập Google + 2FA trong cửa sổ vừa mở.",
         "d_old": "Tên cũ", "d_chrome": "Chrome đăng nhập", "d_port": "Cổng", "d_dir": "Thư mục", "d_saved": "Đăng nhập đã lưu",
+        "everyday": "Chrome thường (chỉ người)", "everyday_stale": "Chrome thường · đang mở, đăng nhập theo lần quét trước",
         "d_none": "  (chưa lưu đăng nhập dịch vụ nào)", "d_exp": "hết hạn", "err": "Lỗi", "scan_err": "Lỗi quét: {e}",
     },
 }
@@ -117,6 +119,7 @@ def run(screenshot_dir=None, demo=False):
     sb.pack(side="right", fill="y")
     tree.tag_configure("open", background="#e6f4ea")
     tree.tag_configure("agent", background="#fff4d6")
+    tree.tag_configure("everyday", foreground="#555577")
 
     bot = ttk.Frame(win, padding=10)
     bot.pack(fill="x")
@@ -151,11 +154,11 @@ def run(screenshot_dir=None, demo=False):
                 continue
             if hide_empty.get() and is_empty(r) and not term:
                 continue
-            by = L["human"] if r["by"] == "human" else r["by"]
+            by = L["human"] if r["by"] == "human" else (L["everyday_stale" if r.get("stale") else "everyday"] if r["by"] == "everyday" else r["by"])
             vals = [r["email"] or f"({r['name']} - {L['no_email']})", r["name"] if r["name"] != r["email"] else "", r["owner"],
                     L["open"] if r["open"] else L["closed"], by]
             vals += ["✓" if k in r["services"] else "" for k in S.SVC] + [r["note"]]
-            tag = ("agent",) if r.get("agent") else (("open",) if r["open"] else ())
+            tag = ("agent",) if r.get("agent") else (("open",) if r["open"] else (("everyday",) if r.get("everyday") else ()))
             shown[tree.insert("", "end", values=vals, tags=tag)] = r
         status.set(L["status"].format(shown=len(shown), total=len(data["rows"]), open=sum(r["open"] for r in data["rows"]), ts=data.get("ts", "")))
 
@@ -199,7 +202,7 @@ def run(screenshot_dir=None, demo=False):
 
     def do_open(r, url=None):
         core.open_url(r["key"], url)
-        status.set(L["opened"].format(name=r["email"] or r["name"], port=r["port"]))
+        status.set(L["opened"].format(name=r["email"] or r["name"], port=r["port"] or "-"))
         win.after(4000, refresh)
 
     def do_login(r, key):

@@ -34,6 +34,7 @@ If you run many Google accounts (agency, marketing team, side businesses) **and*
 - Login detection reads only cookie **names and expiry dates** - never cookie values, never decrypts anything
 - Works with your existing profile folders (`scan_roots`, `pinned`, `index_files` in the config) - nothing is moved
 - Multiple agent runs on the same profile are fine ("AI x2: task A; task B")
+- Optional: also list the profiles of your **everyday Chrome** (`"everyday_chrome": true`) - open them and see their logins from the same table
 - CLI + Python API for agents: `pick`, `open_chrome`, `agent_page`
 
 <p align="center"><img src="docs/img/2_filter_service.png" alt="Filter by service" width="430"> <img src="docs/img/3_filter_owner.png" alt="Filter by owner" width="430"></p>
@@ -86,7 +87,15 @@ Copy the rules in [docs/AGENTS.md](docs/AGENTS.md) into your `CLAUDE.md` / `AGEN
 | `index_files` | JSON files `{key: {name, email, dir}}` if you keep your own index |
 | `owners`, `owner_rules` | owner list and `["substring", "Owner"]` rules to guess owners |
 | `data_dir` | where ports, notes, scan cache, leases and logs live |
+| `everyday_chrome` | `true` to also list your normal Chrome profiles (human-only rows) |
 | `remote_allow_origins` | leave empty; set `"*"` only if an old tool needs it |
+
+## Everyday Chrome vs. hub profiles
+
+Since Chrome 136, Chrome **refuses remote debugging on its default profile folder** (a protection against cookie-stealing malware).
+So the profiles of your normal Chrome can be *listed and opened* by the hub (grey rows, "human only"), but an AI agent cannot attach to them.
+To give an agent a login: **+ New account** -> a dedicated profile folder with its own port -> log in once by hand. Copying an existing
+profile folder does not work: Chrome encrypts cookies per folder, so the copy arrives logged out.
 
 ## Security notes
 

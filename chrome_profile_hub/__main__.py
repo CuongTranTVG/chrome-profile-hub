@@ -38,7 +38,7 @@ def main(argv=None):
                 continue
             if not (r["services"] or r["email"] or r["open"] or r["note"]) and not (o or s):
                 continue
-            print(f"{r['port']} {'OPEN' if r['open'] else '    '} {r['owner'][:8]:8} {(r['email'] or '(' + r['key'] + ')')[:36]:36} "
+            print(f"{r['port'] or '----'} {'OPEN' if r['open'] else '    '} {r['owner'][:8]:8} {(r['email'] or '(' + r['key'] + ')')[:36]:36} "
                   f"{','.join(r['services'])} {('· ' + r['by']) if r['by'] else ''}")
     elif cmd == "json":
         print(json.dumps(S.scan(), ensure_ascii=False, indent=1))

@@ -18,5 +18,6 @@
   "owner_rules": [["@example.com", "Team"], ["client", "Client"]],
   "files": {},
   "lease_minutes": 30,
+  "everyday_chrome": false,
   "remote_allow_origins": null
 }

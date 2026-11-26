@@ -79,8 +79,9 @@ def services_from_cdp(port):
     return _fmt(best, 0)
 
 
-def services_from_disk(d, port=None):
-    for rel in ("Default/Network/Cookies", "Default/Cookies"):
+def services_from_disk(d, port=None, everyday=False):
+    rels = ("Network/Cookies", "Cookies") if everyday else ("Default/Network/Cookies", "Default/Cookies")
+    for rel in rels:
         p = Path(d) / rel
         if not p.exists():
             continue
@@ -89,6 +90,8 @@ def services_from_disk(d, port=None):
             rows = c.execute("select host_key, name, expires_utc, has_expires from cookies").fetchall()
             c.close()
         except Exception as e:      # locked by a running Chrome -> ask Chrome instead
+            if everyday:
+                return None         # locked, no debugging port: keep the last known result
             if port:
                 try:
                     return services_from_cdp(port)
@@ -106,8 +109,8 @@ def services_from_disk(d, port=None):
     return {}
 
 
-def chrome_signed_in(d):
-    pr = core._load(Path(d) / "Default" / "Preferences", {})
+def chrome_signed_in(d, everyday=False):
+    pr = core._load(Path(d) / ("Preferences" if everyday else "Default/Preferences"), {})
     return [a.get("email") for a in pr.get("account_info", []) if a.get("email")]
 
 
@@ -122,8 +125,26 @@ def guess_owner(email, name):
 def scan():
     meta = core._load(META, {})
     listening = core.listening_ports()
+    prev = {x["key"]: x for x in cached().get("rows", [])}
+    every_open = None
     rows = []
     for r in core.catalog():
+        if r.get("everyday"):
+            if every_open is None:
+                every_open = core.everyday_running()
+            m = meta.get(r["key"], {})
+            exists = Path(r["dir"]).exists()
+            sv = services_from_disk(r["dir"], everyday=True) if exists else {}
+            stale = sv is None
+            if stale:
+                sv = prev.get(r["key"], {}).get("services", {})
+            email = m.get("email") or r["email"]
+            rows.append({"key": r["key"], "name": m.get("name") or r["name"], "email": email, "port": None, "dir": r["dir"],
+                         "owner": m.get("owner") or guess_owner(email, r["name"]), "note": m.get("note", ""),
+                         "open": False, "by": "everyday", "agent": False, "everyday": True, "stale": stale, "exists": exists,
+                         "chrome_login": chrome_signed_in(r["dir"], everyday=True) if exists else [], "services": sv,
+                         "chrome_running": every_open})
+            continue
         m = meta.get(r["key"], {})
         exists = Path(r["dir"]).exists()
         ce = chrome_signed_in(r["dir"]) if exists else []
